@@ -1,0 +1,216 @@
+Program.Sub.ScreenSU.Start
+Gui.frmCopy..Create
+Gui.frmCopy..Caption("Copy Long Part")
+Gui.frmCopy..Size(4245,3150)
+Gui.frmCopy..MinX(0)
+Gui.frmCopy..MinY(0)
+Gui.frmCopy..Position(0,0)
+Gui.frmCopy..BackColor(-2147483633)
+Gui.frmCopy..MousePointer(0)
+Gui.frmCopy..Event(UnLoad,frmCopy_UnLoad)
+Gui.frmCopy.cmdBrowsePart.Create(Button)
+Gui.frmCopy.cmdBrowsePart.Size(450,375)
+Gui.frmCopy.cmdBrowsePart.Position(3090,405)
+Gui.frmCopy.cmdBrowsePart.Caption("^")
+Gui.frmCopy.cmdBrowsePart.Event(Click,cmdBrowsePart_Click)
+Gui.frmCopy.txtPartRev.Create(TextBox,"",True,2505,300,0,90,480,True,0,"Arial",8,-2147483643,1)
+Gui.frmCopy.txtPartRev.Event(LostFocus,txtPartRev_LostFocus)
+Gui.frmCopy.txtLoc.Create(TextBox,"",True,360,300,0,2685,465,True,0,"Arial",8,-2147483643,1)
+Gui.frmCopy.lbl1.Create(Label,"Part",True,1350,255,0,105,270,True,0,"Arial",8,-2147483633,0)
+Gui.frmCopy.lbl2.Create(Label,"Loc",True,495,255,0,2715,195,True,0,"Arial",8,-2147483633,0)
+Gui.frmCopy.txtPartRev2.Create(TextBox,"",True,2505,300,0,75,1110,True,0,"Arial",8,-2147483643,1)
+Gui.frmCopy.txtPartRev2.Event(LostFocus,txtPartRev2_LostFocus)
+Gui.frmCopy.lbl3.Create(Label,"New Part",True,1350,255,0,60,870,True,0,"Arial",8,-2147483633,0)
+Gui.frmCopy.txtLoc2.Create(TextBox,"",True,390,300,0,2670,1110,True,0,"Arial",8,-2147483643,1)
+Gui.frmCopy.chk1.Create(CheckBox)
+Gui.frmCopy.chk1.Size(1860,360)
+Gui.frmCopy.chk1.Position(60,1500)
+Gui.frmCopy.chk1.Caption("Maintain New Part")
+Gui.frmCopy.cmdCopy.Create(Button)
+Gui.frmCopy.cmdCopy.Size(855,375)
+Gui.frmCopy.cmdCopy.Position(45,1995)
+Gui.frmCopy.cmdCopy.Caption("Copy")
+Gui.frmCopy.cmdCopy.Event(Click,cmdCopy_Click)
+Program.Sub.ScreenSU.End
+
+Program.Sub.Preflight.Start
+Program.Sub.Preflight.End
+
+Program.Sub.Main.Start
+f.ODBC.Connection!con.opencompanyconnection(60)
+f.Intrinsic.UI.SetBrowserHotTypeAhead(true)
+V.LOCAL.lPartChar.Declare
+F.Global.General.ReadOption("400861",3,17,"0000",V.Local.lPartChar)
+gui.frmCopy.txtPartRev.MaxLength(v.Local.lPartChar)
+gui.frmCopy.txtPartRev2.MaxLength(v.Local.lPartChar)
+gui.frmCopy..Show
+Program.Sub.Main.End
+
+Program.Sub.cmdBrowsePart_Click.Start
+V.Local.sSQL.Declare(String)
+V.Local.sCol.Declare(String)
+V.Local.sColW.Declare(String)
+V.Local.sRet.Declare(String)
+V.Local.sSQL.set("SELECT IFNULL(INV_LXR.DISPLAY_PART,PART) AS 'DISPLAYPART', LOCATION, DESCRIPTION FROM V_INVENTORY_ALL LEFT JOIN INV_LXR ON INV_LXR.GSS_PART = V_INVENTORY_ALL.PART")
+'Split Column Names into an array (*!* delimited string)
+F.Intrinsic.String.Split("PART*!*LOCATION*!*DESCRIPTION","*!*",V.Local.sCol)
+'Split Column widths into an array (*!* delimited string)
+F.Intrinsic.String.Split("2000*!*250*!*3100","*!*",V.Local.sColW)
+F.Intrinsic.UI.Browser("Select a Part","Con",V.Local.sSQL,V.Local.sCol,V.Local.sColW,V.Local.sRet)
+F.Intrinsic.Control.If(V.Local.sRet,<>,"***CANCEL***")
+	f.Intrinsic.string.Split(v.Local.sRet,"*!*",v.Local.sRet)
+	gui.frmCopy.txtPartRev.Text(v.Local.sret(0).trim)
+	gui.frmCopy.txtLoc.Text(v.Local.sret(1).trim)
+	gui.frmCopy.txtPartRev2.Text(v.Local.sret(0).trim)
+	gui.frmCopy.txtLoc2.Text(v.Local.sRet(1).trim)
+F.Intrinsic.Control.EndIf
+Program.Sub.cmdBrowsePart_Click.End
+
+Program.Sub.cmdCopy_Click.Start
+f.Intrinsic.Control.Try
+	GUI.frmCopy.cmdCopy.Enabled(False)
+	v.Local.sParams.Declare
+	V.Local.sOldPart.Declare
+	v.Local.sOldLoc.Declare
+	v.Local.sNewPart.Declare
+	v.Local.sNewLoc.Declare
+	v.Local.sSql.Declare
+	v.Local.sRet.Declare
+	v.Local.sret2.Declare
+	V.Local.sRet3.Declare
+	V.Local.sRet4.Declare
+	V.Local.sNewGSSPart.Declare
+	v.Local.sOldGSSPart.Declare
+	
+	v.Local.sloc.Declare
+	v.Local.sLot.Declare
+	v.Local.sUM.Declare
+	v.Local.sDesc.Declare
+	v.Local.sPL.Declare
+	v.Local.sSource.Declare
+	v.Local.sAlt.Declare
+	v.Local.sAlt2.Declare
+	v.Local.sSort.Declare
+	v.Local.sbin.Declare
+	v.Local.fQtyOrd.Declare
+	v.Local.fQtyReO.Declare
+	v.Local.sABC.Declare
+	v.Local.fLead.Declare
+	v.Local.sText1.Declare
+	v.Local.sText2.Declare
+	v.Local.sNameVendor.Declare
+	v.Local.sUMPurch.Declare
+	
+	v.Local.fPrice.Declare
+	
+	V.Local.sInvExtra.Declare
+	
+	'Set the variables
+	v.Local.sNewPart.Set(v.Screen.frmCopy!txtPartRev2.text)
+	v.Local.sNewLoc.Set(v.Screen.frmCopy!txtLoc2.text)
+	v.Local.sOldPart.Set(v.Screen.frmCopy!txtPartRev.text)
+	v.Local.sOldLoc.Set(v.Screen.frmCopy!txtLoc.text)
+	f.Global.Inventory.GetGSSPart(v.Local.sNewPart.Trim,"",v.Local.sNewGSSPart)
+	F.Global.Inventory.GetGSSPart(v.Local.sOldPart.Trim,"",v.Local.sOldGSSPart)
+	
+	'Get the rest from the part master
+	F.Intrinsic.String.Build("SELECT  PART, LOCATION, PRODUCT_LINE, DESCRIPTION, UM_INVENTORY, AMT_PRICE, CODE_SOURCE, DESCRIPTION_2, DESCRIPTION_3,FLAG_LOT, CODE_SORT, BIN, QTY_ORDER, QTY_REORDER, CODE_ABC, TEXT_INFO1, TEXT_INFO2, UM_PURCHASING, NAME_VENDOR, TIME_MATERIAL_LEAD from V_INVENTORY_ALL WHERE V_INVENTORY_ALL.PART='{0}' AND V_INVENTORY_ALL.LOCATION='{1}'",v.Local.sOldGSSPart.PSQLFriendly,v.Local.sOldLoc,v.Local.ssql)
+	f.ODBC.Connection!con.executeandreturn(v.Local.sSql,v.Local.sRet)
+	f.Intrinsic.String.Split(v.Local.sRet,"*!*",v.local.sRet)
+	f.Intrinsic.Control.If(v.Local.sRet.Trim,<>,"")
+		'Make sure the new part does not exist as well
+		f.Intrinsic.String.build("select * from v_inventory_all where part='{0}'",v.Local.sNewGSSPart.PSQLFriendly,v.Local.sSql)
+		f.odbc.Connection!con.executeandreturn(v.Local.sSql,v.Local.sret2)
+		f.Intrinsic.Control.If(v.Local.sRet2.Trim,=,"")	
+			V.Local.sDesc.Set(v.Local.sret(3))
+			v.Local.sPL.Set(v.Local.sret(2))
+			v.Local.sSource.Set(v.Local.sret(6))
+			v.Local.sAlt.Set(v.Local.sret(7))
+			v.Local.sAlt2.Set(v.Local.sret(8))
+			v.Local.fPrice.Set(v.Local.sret(5))
+			v.Local.slot.Set(v.Local.sret(9))
+			v.Local.sUM.Set(v.Local.sret(4))
+			v.Local.sSort.Set(v.Local.sRet(10))
+			V.Local.sbin.Set(v.Local.sRet(11))
+			v.Local.fQtyOrd.Set(v.Local.sret(12))
+			v.Local.fQtyReO.Set(v.Local.sRet(13))
+			v.Local.sABC.Set(v.Local.sRet(14))
+			v.Local.sText1.Set(v.Local.sRet(15))
+			v.Local.sText2.Set(v.Local.sRet(16))
+			v.Local.sUMPurch.Set(v.Local.sRet(17))
+			v.Local.sNameVendor.Set(v.Local.sRet(18))
+			v.Local.fLead.Set(v.Local.sRet(19))
+
+			f.Global.Inventory.CreatePart(v.Local.sNewGSSPart,v.Local.sUM,"",v.Local.sNewLoc,v.Local.sPL,v.Local.sSource,v.Local.sAlt,v.Local.sAlt2,v.Local.fPrice,"NOMAINT ")
+
+			
+			F.Intrinsic.Control.If(V.Caller.GSSVersion.Float,>=, 2020.1)
+				F.Intrinsic.String.Build("SELECT TEXT FROM V_INV_EXTRA_TEXT WHERE PART = '{0}'", V.Local.sOldGSSPart.PSQLFriendly, V.Local.sSql)
+				F.ODBC.Connection!con.ExecuteAndReturn(V.Local.sSql, V.Local.sRet3)
+				F.Intrinsic.Control.If(V.Local.sRet3.Trim,<>,"")
+					F.Intrinsic.String.Replace(V.Local.sRet3, "'", "''", V.Local.sRet3)
+					'check to see if there is an existing inv_extra record for the new part. If there is, update, if not, insert
+					F.Intrinsic.String.Build("SELECT TEXT FROM V_INV_EXTRA_TEXT WHERE PART = '{0}'", V.Local.sNewGSSPart.PSQLFriendly, V.Local.sSql)
+					F.ODBC.Connection!con.ExecuteAndReturn(V.Local.sSql, V.Local.sRet4)
+					F.Intrinsic.Control.If(V.Local.sRet4.Trim,<>,"")
+						F.Intrinsic.String.Build("UPDATE INV_EXTRA_TEXT SET TEXT = '{0}' WHERE PART = '{1}'", V.Local.sRet3.Trim, V.Local.sNewGSSPart.PSQLFriendly, V.Local.sSql)
+						F.ODBC.Connection!con.Execute(V.Local.sSql)
+					F.Intrinsic.Control.Else
+						F.Intrinsic.String.Build("INSERT INTO INV_EXTRA_TEXT (PART, TEXT) VALUES ('{0}', '{1}')", V.Local.sNewGSSPart.PSQLFriendly, V.Local.sRet3.Trim, V.Local.sSql)
+						F.ODBC.Connection!con.Execute(V.Local.sSql)
+					F.Intrinsic.Control.EndIf
+				F.Intrinsic.Control.EndIf
+			F.Intrinsic.Control.EndIf
+			
+			'Update the secondary info
+			f.Intrinsic.String.Build("UPDATE INVENTORY_MSTR SET BIN='{0}', UM_PURCHASING='{1}', QTY_ORDER='{2}', QTY_REORDER='{3}', CODE_SORT='{4}', TIME_MATERIAL_LEAD='{5}', CODE_ABC='{6}', FLAG_LOT='{7}', DESCRIPTION='{9}' WHERE PART='{8}'",v.Local.sbin,v.Local.sUMPurch,v.Local.fQtyOrd,v.Local.fQtyReO,v.Local.sSort,v.Local.fLead,v.Local.sABC,v.Local.sLot,v.Local.sNewGSSPart.PSQLFriendly,v.Local.sDesc.PSQLFriendly,v.Local.sSql)
+			f.ODBC.Connection!con.execute(v.Local.ssql)
+			
+			'Update the tertiary info
+			f.Intrinsic.String.Build("UPDATE INVENTORY_MST2 SET NAME_VENDOR='{0}', TEXT_INFO1='{1}', TEXT_INFO2='{2}', DESCRIPTION_2='{3}', DESCRIPTION_3='{4}' WHERE PART='{5}'",v.Local.sNameVendor,v.Local.sText1.PSQLFriendly,v.Local.sText2.PSQLFriendly,v.Local.sAlt.PSQLFriendly,v.Local.sAlt2.PSQLFriendly,v.Local.sNewGSSPart.PSQLFriendly,v.Local.ssql)
+			F.odbc.Connection!con.execute(v.Local.ssql)
+			
+			f.Intrinsic.Control.If(v.Screen.frmCopy!chk1.Value,=,"1")
+				f.Intrinsic.String.ConcatCallWrapperArgs("O",v.local.sNewGSSPart,"",v.Local.sParams)
+				f.Global.General.CallWrapperSync(300000,v.Local.sParams)
+			f.Intrinsic.Control.endif
+			
+			f.Intrinsic.UI.Msgbox("Successfully copied")
+			gui.frmCopy.txtPartRev.Text("")
+			gui.frmCopy.txtPartRev2.Text("")
+			gui.frmCopy.txtLoc.Text("")
+			gui.frmCopy.txtLoc2.Text("")
+		f.Intrinsic.Control.Else
+			f.Intrinsic.UI.Msgbox("New Part exists in inventory, did not copy.")
+		f.Intrinsic.Control.EndIf
+	f.Intrinsic.Control.Else
+		f.Intrinsic.UI.Msgbox("Part not found for copy.")
+	f.Intrinsic.Control.EndIf
+	gui.frmCopy.cmdCopy.Enabled(true)
+f.Intrinsic.Control.Catch
+	f.Intrinsic.UI.Msgbox(v.Ambient.ErrorDescription)
+	f.Intrinsic.Control.CallSub(frmCopy_UnLoad)
+f.Intrinsic.Control.EndTry
+Program.Sub.cmdCopy_Click.End
+
+Program.Sub.frmCopy_UnLoad.Start
+f.ODBC.Connection!con.Close
+f.Intrinsic.Control.End
+Program.Sub.frmCopy_UnLoad.End
+
+Program.Sub.txtPartRev_LostFocus.Start
+v.Local.supper.Declare
+f.Intrinsic.String.UCase(v.Screen.frmCopy!txtPartRev.text,v.Local.supper)
+gui.frmCopy.txtPartRev.Text(v.Local.supper)
+Program.Sub.txtPartRev_LostFocus.End
+
+Program.Sub.txtPartRev2_LostFocus.Start
+v.Local.supper.Declare
+f.Intrinsic.String.UCase(v.Screen.frmCopy!txtpartrev2.text,v.Local.supper)
+gui.frmCopy.txtPartRev2.Text(v.Local.supper)
+Program.Sub.txtPartRev2_LostFocus.End
+
+Program.Sub.Comments.Start
+${$5$}$2.0.0.0$}$2
+${$6$}$acollins$}$20211229200426080$}$h98hERc2yV72q0GaUGlwSaoK/aefTdVk/Cko6kf8J7IgnRcbycsqWKxiyVAAj3btfApjhSlGRZqqlwgYgD085A==
+Program.Sub.Comments.End
